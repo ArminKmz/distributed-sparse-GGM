@@ -57,7 +57,7 @@ def generate_and_save_plot_data(N, K, mat, run_id):
         fnr_avg = np.zeros(len(methods))
         fpr_avg = np.zeros(len(methods))
         lambda_avg = np.zeros(len(methods))
-        for j in range(min(1,len(name_list[i]))):
+        for j in range(len(name_list[i])):
             Q_inv = mat.get(name_list[i][j]).todense()
             Q = LA.inv(Q_inv)
             p = Q.shape[0]
@@ -152,5 +152,5 @@ def plot(run_id):
     plt.show()
 
 mat = loadmat('cov_generator/random_covs.mat')
-generate_and_save_plot_data(10*1000, 1, mat, '1')
+generate_and_save_plot_data(10*1000, 10, mat, '1')
 # plot('1')
