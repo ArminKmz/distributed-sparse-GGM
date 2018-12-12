@@ -1,5 +1,5 @@
 from scipy.io import loadmat
-import plot_dimension, plot_sample
+import plot_dimension, plot_sample, plot_pofe
 
 def run_1_p():
     mat = loadmat('cov_generator/random_covs.mat')
@@ -38,9 +38,17 @@ def run_3_n():
     plot_sample.generate_and_save_plot_data(l, 10, mat, names, '3')
     # plot_sample.plot('3')
 
+def run_1_pofe():
+    mat = loadmat('cov_generator/star.mat')
+    Q_inv = mat.get('Q_inv')
+    N_list = [100*i for i in range(1,41)]
+    plot_pofe.generate_and_save_plot_data(N_list, 10, Q_inv, '1')
+    # plot_pofe.plot('1')
+
 # run_1_p()
 # run_2_p()
 # run_3_p()
 # run_1_n()
 # run_2_n()
 # run_3_n()
+run_1_pofe()

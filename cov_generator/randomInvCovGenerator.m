@@ -11,7 +11,7 @@ function [Q_inv] = randomInvCovGenerator(n, p, max_degree)
        d = 0;
        for j=1:n
           if G(i, j) == 1 && i ~= j
-             if d > max_degree  
+             if d >= max_degree  
                 G(i, j) = 0;
                 G(j, i) = 0;
              else
@@ -24,7 +24,10 @@ function [Q_inv] = randomInvCovGenerator(n, p, max_degree)
 %     G(logical(eye(n))) = 1;
 %     Q_inv = sprandsym(G, [], 1/6, 3);
     
-    
+%     tmp = rand(n, n);
+%     a = .01;
+%     b = 1;
+%     tmp = (tmp + a) / (a+b);
     tmp = 1 - 2*rand(n, n);
     Q_inv = (tmp + tmp') / 2;
     Q_inv(G==0) = 0;

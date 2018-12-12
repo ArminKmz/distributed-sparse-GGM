@@ -216,6 +216,10 @@ def joint_method(samples, ground_graph, Hr, Hi, snr, sigma2, _lambda=None):
     cov = H_inv @ (S_y - sigma2 * np.eye(2*n)) @ H_inv.T
     cov = (cov[:n, :n] + cov[n:, n:]) / 2.
     np.fill_diagonal(cov, p / 2.)
+    w, v = LA.eig(cov)
+    for i in range(w.shape[0]):
+        w[i] = max(w[i], 1e-9)
+    cov = v @ np.diag(w) @ LA.inv(v)
     if _lambda == None:
         return best_error(cov, ground_graph)
     return error(cov, ground_graph, _lambda)

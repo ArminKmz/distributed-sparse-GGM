@@ -5,7 +5,7 @@ for p=5:5:100
    k=1;
    disp(p);
    while k <= 20
-       [Q_inv] = randomInvCovGenerator(p, .1, 4);
+       [Q_inv] = randomInvCovGenerator(p, .1, 5);
 %        disp(min(Q_inv(Q_inv~=0)));
        if check(Q_inv)
           name = strcat('Qinv_', int2str(p), '_', num2str(k));
