@@ -39,4 +39,8 @@ def run_3_n():
     # plot_sample.plot('3')
 
 # run_1_p()
+# run_2_p()
+# run_3_p()
 # run_1_n()
+# run_2_n()
+# run_3_n()

@@ -212,7 +212,7 @@ def joint_method(samples, ground_graph, Hr, Hi, snr, sigma2, _lambda=None):
         y[n:] = y2
         y_samples.append(y)
     y_samples = np.array(y_samples)
-    S_y = 1. / N * (y_samples.T @ y_samples)
+    S_y = 2. / N * (y_samples.T @ y_samples)
     cov = H_inv @ (S_y - sigma2 * np.eye(2*n)) @ H_inv.T
     cov = (cov[:n, :n] + cov[n:, n:]) / 2.
     np.fill_diagonal(cov, p / 2.)
