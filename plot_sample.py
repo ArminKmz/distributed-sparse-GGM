@@ -1,5 +1,4 @@
 import utils
-from scipy.io import loadmat
 import numpy as np
 import numpy.linalg as LA
 import matplotlib.pyplot as plt
@@ -13,38 +12,40 @@ SIGN_METHOD = 1
 JOINT_METHOD = 2
 methods = [ORIGINAL_METHOD, SIGN_METHOD, JOINT_METHOD]
 
-def generate_and_save_plot_data(N_list, K, Q_inv, run_id):
+def generate_and_save_plot_data(N_list, K, mat, names, run_id):
     '''
         Q_inv -> sparse precision matrix.
     '''
     global ORIGINAL_METHOD, SIGN_METHOD, JOINT_METHOD, methods
 
-    Q_inv = Q_inv.todense()
-    Q = LA.inv(Q_inv)
-    p = Q_inv.shape[0]
-    edges = utils.edges(Q_inv)
-    non_edges = (p * (p - 1) / 2) - edges
-    graph = utils.sparsity_pattern(Q_inv)
     fpr_list    = np.zeros((len(N_list), len(methods)))
     fnr_list    = np.zeros((len(N_list), len(methods)))
     lambda_list = np.zeros((len(N_list), len(methods)))
+
     for i in range(len(N_list)):
         N = N_list[i]
         fnr_avg    = np.zeros(len(methods))
         fpr_avg    = np.zeros(len(methods))
         lambda_avg = np.zeros(len(methods))
-        for k in range(K):
-            samples = np.random.multivariate_normal(np.zeros(p), Q, N)
-            fn      = np.zeros(len(methods))
-            fp      = np.zeros(len(methods))
-            _lambda = np.zeros(len(methods))
-            error, fn[ORIGINAL_METHOD], fp[ORIGINAL_METHOD], _lambda[ORIGINAL_METHOD] = utils.original_data(samples, graph)
-            error, fn[SIGN_METHOD],     fp[SIGN_METHOD],     _lambda[SIGN_METHOD]     = utils.sign_method(samples, graph)
-            error, fn[JOINT_METHOD],    fp[JOINT_METHOD],    _lambda[JOINT_METHOD]    = utils.joint_method(samples, graph, np.eye(p), np.eye(p), .1)
-            for method in methods:
-                fpr_avg[method]    += fp[method] / (non_edges + .0)
-                fnr_avg[method]    += fn[method] / (edges + .0)
-                lambda_avg[method] += _lambda[method]
+        for j in range(len(names)):
+            Q_inv = mat.get(names[j]).todense()
+            Q = LA.inv(Q_inv)
+            p = Q_inv.shape[0]
+            edges = utils.edges(Q_inv)
+            non_edges = (p * (p - 1) / 2) - edges
+            graph = utils.sparsity_pattern(Q_inv)
+            for k in range(K):
+                samples = np.random.multivariate_normal(np.zeros(p), Q, N)
+                fn      = np.zeros(len(methods))
+                fp      = np.zeros(len(methods))
+                _lambda = np.zeros(len(methods))
+                error, fn[ORIGINAL_METHOD], fp[ORIGINAL_METHOD], _lambda[ORIGINAL_METHOD] = utils.original_data(samples, graph)
+                error, fn[SIGN_METHOD],     fp[SIGN_METHOD],     _lambda[SIGN_METHOD]     = utils.sign_method(samples, graph)
+                error, fn[JOINT_METHOD],    fp[JOINT_METHOD],    _lambda[JOINT_METHOD]    = utils.joint_method(samples, graph, np.eye(p), np.zeros((p, p)), 3,  .1)
+                for method in methods:
+                    fpr_avg[method]    += fp[method] / (non_edges + .0)
+                    fnr_avg[method]    += fn[method] / (edges + .0)
+                    lambda_avg[method] += _lambda[method]
         for method in methods:
             fpr_list[i, method]    = fpr_avg[method]    / K
             fnr_list[i, method]    = fnr_avg[method]    / K
@@ -100,9 +101,3 @@ def plot(run_id):
     plt.ylabel('lambda')
     plt.legend(handles=[red_patch, blue_patch, joint_patch])
     plt.show()
-
-# l = [1000 * (i) for i in range(1, 2)]
-# mat = loadmat('cov_generator/random_covs.mat')
-# Q_inv = mat.get('Qinv_50_18')
-# generate_and_save_plot_data(l, 1, Q_inv, '1')
-# plot('1')

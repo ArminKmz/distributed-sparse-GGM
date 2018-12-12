@@ -189,9 +189,9 @@ def per_symbol_quantization_method(samples, ground_graph, r, _lambda=None):
         return best_error(cov, ground_graph)
     return error(cov, ground_graph, _lambda)
 
-def joint_method(samples, ground_graph, Hr, Hi, sigma2, _lambda=None):
-    p = 3 * sigma2
-    samples = np.sqrt(p) * samples
+def joint_method(samples, ground_graph, Hr, Hi, snr, sigma2, _lambda=None):
+    p = snr * sigma2
+    samples = np.sqrt(p / 2.) * samples
     N, n = samples.shape
     x1_samples = samples[:N//2, :]
     x2_samples = samples[N//2:, :]
@@ -205,8 +205,8 @@ def joint_method(samples, ground_graph, Hr, Hi, sigma2, _lambda=None):
     z2_samples = np.random.multivariate_normal(np.zeros(n), sigma2*np.eye(n), N // 2)
     y_samples = []
     for i in range(N//2):
-        y1 = Hr @ x1_samples[i, :] - Hi @ x2_samples[i, :] + z1_samples[i]
-        y2 = Hr @ x2_samples[i, :] + Hi @ x1_samples[i, :] + z2_samples[i]
+        y1 = Hr @ x1_samples[i, :] - Hi @ x2_samples[i, :] + z1_samples[i, :]
+        y2 = Hr @ x2_samples[i, :] + Hi @ x1_samples[i, :] + z2_samples[i, :]
         y = np.zeros(2*n)
         y[:n] = y1
         y[n:] = y2
@@ -215,6 +215,7 @@ def joint_method(samples, ground_graph, Hr, Hi, sigma2, _lambda=None):
     S_y = 1. / N * (y_samples.T @ y_samples)
     cov = H_inv @ (S_y - sigma2 * np.eye(2*n)) @ H_inv.T
     cov = (cov[:n, :n] + cov[n:, n:]) / 2.
+    np.fill_diagonal(cov, p / 2.)
     if _lambda == None:
         return best_error(cov, ground_graph)
     return error(cov, ground_graph, _lambda)

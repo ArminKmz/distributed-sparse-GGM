@@ -73,7 +73,7 @@ def generate_and_save_plot_data(N, K, mat, run_id):
                 _lambda = np.zeros(len(methods))
                 error, fn[ORIGINAL_METHOD], fp[ORIGINAL_METHOD], _lambda[ORIGINAL_METHOD] = utils.original_data(samples, graph)
                 error, fn[SIGN_METHOD],     fp[SIGN_METHOD],     _lambda[SIGN_METHOD]     = utils.sign_method(samples, graph)
-                error, fn[JOINT_METHOD],    fp[JOINT_METHOD],    _lambda[JOINT_METHOD]    = utils.joint_method(samples, graph, np.eye(p), np.eye(p), .1)
+                error, fn[JOINT_METHOD],    fp[JOINT_METHOD],    _lambda[JOINT_METHOD]    = utils.joint_method(samples, graph, np.eye(p), np.zeros((p, p)), 3,  .1)
                 for method in methods:
                     fpr_avg[method]    += fp[method] / (non_edges + .0)
                     fnr_avg[method]    += fn[method] / (edges + .0)
@@ -150,7 +150,3 @@ def plot(run_id):
     plt.ylabel('lambda')
     plt.legend(handles=[red_patch, blue_patch, joint_patch])
     plt.show()
-
-mat = loadmat('cov_generator/random_covs.mat')
-generate_and_save_plot_data(10*1000, 10, mat, '1')
-# plot('1')
