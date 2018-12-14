@@ -177,6 +177,10 @@ def sign_method(samples, ground_graph, _lambda=None):
     N = samples.shape[0]
     cov = 1. / N * (sign_samples.T @ sign_samples)
     cov = np.sin(np.pi * cov / 2.)
+    w, v = LA.eig(cov)
+    for i in range(w.shape[0]):
+        w[i] = max(w[i], 1e-9)
+    cov = v @ np.diag(w) @ LA.inv(v)
     if _lambda == None:
         return best_error(cov, ground_graph)
     return error(cov, ground_graph, _lambda)

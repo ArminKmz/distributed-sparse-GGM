@@ -5,8 +5,6 @@ import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
 import os
 
-np.random.seed(0)
-
 ORIGINAL_METHOD = 0
 SIGN_METHOD = 1
 JOINT_METHOD = 2

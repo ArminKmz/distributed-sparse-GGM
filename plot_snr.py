@@ -6,8 +6,6 @@ from scipy.io import loadmat
 import os
 import matplotlib.patches as mpatches
 
-np.random.seed(0)
-
 def generate_and_save_plot_data(snr_list, K, N, Q_inv, run_id):
     Q_inv = Q_inv.todense()
     Q = LA.inv(Q_inv)
@@ -17,13 +15,10 @@ def generate_and_save_plot_data(snr_list, K, N, Q_inv, run_id):
     graph = utils.sparsity_pattern(Q_inv)
     samples = np.random.multivariate_normal(np.zeros(p), Q, N)
 
-    Hi_list = np.random.normal(0, 1.5, (K, p, p))
-    Hr_list = np.random.normal(0, 1.5, (K, p, p))
+    Hi_list = np.random.normal(0, 1, (K, p, p))
+    Hr_list = np.random.normal(0, 1, (K, p, p))
 
     _, fnr_org, fpr_org, _ = utils.original_data(samples, graph)
-    print(fnr_org)
-    print(fpr_org)
-    # exit(0)
     fnr_org /= (edges + .0)
     fpr_org /= (non_edges + .0)
 
@@ -95,10 +90,3 @@ def plot(run_id):
     plt.xlabel('SNR')
     plt.ylabel('lambda')
     plt.show()
-
-
-mat = loadmat('cov_generator/random_covs.mat')
-Q_inv = mat.get('Qinv_40_4')
-snr_list = [2**i for i in range(1, 5)]
-# generate_and_save_plot_data(snr_list, 10, 10*1000, Q_inv, '1')
-plot('1')
