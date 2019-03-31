@@ -12,5 +12,5 @@ for i=2:n
     end
 end
 Q_inv = inv(Q);
-disp(Q_inv);
+check(Q_inv);
 save('star.mat', 'Q_inv');

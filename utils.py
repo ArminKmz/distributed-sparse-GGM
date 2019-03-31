@@ -7,6 +7,84 @@ from rpy2.robjects import numpy2ri
 import rpy2.robjects as robjects
 glasso_lib = rpackages.importr('glasso')
 
+def get_star(n, rho, delta=None, normalize=False):
+    if delta == None:
+        delta = n - 1
+    Q = np.zeros((n, n))
+    for i in range(n):
+        Q[i, i] = 1
+        if 1 <= i and i <= delta:
+            Q[i, 0] , Q[0, i] = rho, rho
+            if normalize:
+                Q[i, 0] /= (delta+.0)
+                Q[0, i] /= (delta+.0)
+    for i in range(1, delta+1):
+        for j in range(i+1, delta+1):
+            Q[i, j] = Q[0, i] * Q[0, j]
+            Q[j, i] = Q[i, j]
+    Q_inv = LA.inv(Q)
+    Q_inv[abs(Q_inv) < 1e-12] = 0
+    return Q_inv
+
+def get_chain(n, rho):
+    Q = np.zeros((n, n))
+    for i in range(n):
+        Q[i, i] = 1
+        for j in range(i+1, n):
+            Q[i, j] = rho ** (j-i)
+            Q[j, i] = Q[i, j]
+    Q_inv = LA.inv(Q)
+    Q_inv[abs(Q_inv) < 1e-12] = 0
+    return Q_inv
+
+def get_cycle(n, omega):
+    Q_inv = np.zeros((n, n))
+    for i in range(n):
+        Q_inv[i, i] = 1
+        Q_inv[i, (i+1)%n] = omega
+        Q_inv[(i+1)%n, i] = omega
+    Q = LA.inv(Q_inv)
+    Q_inv = np.diag(np.diag(Q)) @ Q_inv
+    return Q_inv
+
+def get_model_complexity(Q_inv, delta):
+    theta_min = np.min(abs(Q_inv[np.nonzero(Q_inv)]))
+
+    Q = LA.inv(Q_inv)
+    Q[Q<1e-12] = 0
+    print(Q)
+    kappa_sigma = LA.norm(Q, np.inf)
+
+    gamma = np.kron(Q, Q)
+    p = Q.shape[0]
+    ei, ej = np.nonzero(Q_inv)
+    Q_inv_c = np.copy(Q_inv)
+    Q_inv_c[Q_inv==0] = 1
+    Q_inv_c[Q_inv!=0] = 0
+    cei, cej = np.nonzero(Q_inv_c)
+    A = np.zeros((cei.shape[0], ei.shape[0]))
+    for i in range(cei.shape[0]):
+        a = cei[i]
+        b = cej[i]
+        for j in range(ei.shape[0]):
+            c = ei[j]
+            d = ej[j]
+            A[i, j] = gamma[a*p+b, c*p+d]
+    B = np.zeros((ei.shape[0], ej.shape[0]))
+    for i in range(ei.shape[0]):
+        a = ei[i]
+        b = ej[i]
+        for j in range(ej.shape[0]):
+            c = ei[j]
+            d = ej[j]
+            B[i, j] = gamma[a*p+b, c*p+d]
+    kappa_gamma = LA.norm(LA.inv(B), np.inf)
+    alpha = 1 - LA.norm(A @ LA.inv(B), np.inf)
+
+    K = (1 + 8. / alpha) * max(kappa_gamma / theta_min, 3*delta*
+            max(kappa_sigma*kappa_gamma, kappa_gamma**2*kappa_sigma**3))
+    return (K, alpha, kappa_gamma, kappa_sigma, theta_min)
+
 def get_max_degree(graph):
     return int(np.max(np.sum(graph, axis=1)))
 
@@ -15,7 +93,7 @@ def glasso(cov, rho):
         USING R IMPLEMENTED [FASTER]
     '''
     numpy2ri.activate()
-    ret = glasso_lib.glasso(cov, rho)
+    ret = glasso_lib.glasso(cov, rho, thr=1e-10, maxit=1e5, penalize_diagonal=False)
     numpy2ri.deactivate()
     return np.array(ret[1])
 
@@ -164,9 +242,13 @@ def error(cov, ground_graph, _lambda, return_precision_matrix=False):
         return fn+fp, fn, fp, J
     return fn+fp, fn, fp
 
+def sign_error(cov, Q_inv, _lambda):
+    J = glasso(cov, _lambda)
+
 def original_data(samples, ground_graph, _lambda=None):
     N = samples.shape[0]
-    cov = 1. / N * (samples.T @ samples)
+    # cov = 1. / N * (samples.T @ samples)
+    cov = np.cov(samples.T)
     if _lambda == None:
         return best_error(cov, ground_graph)
     return error(cov, ground_graph, _lambda)
@@ -175,7 +257,8 @@ def sign_method(samples, ground_graph, _lambda=None):
     sign_samples = np.sign(samples)
     assert(sign_samples[sign_samples==0].shape[0] == 0)
     N = samples.shape[0]
-    cov = 1. / N * (sign_samples.T @ sign_samples)
+    # cov = 1. / N * (sign_samples.T @ sign_samples)
+    cov = np.cov(samples.T)
     cov = np.sin(np.pi * cov / 2.)
     w, v = LA.eig(cov)
     for i in range(w.shape[0]):
@@ -216,10 +299,11 @@ def joint_method(samples, ground_graph, Hr, Hi, snr, sigma2, _lambda=None):
         y[n:] = y2
         y_samples.append(y)
     y_samples = np.array(y_samples)
-    S_y = 2. / N * (y_samples.T @ y_samples)
+    # S_y = 2. / N * (y_samples.T @ y_samples)
+    S_y = np.cov(y_samples.T)
     cov = H_inv @ (S_y - sigma2 * np.eye(2*n)) @ H_inv.T
     cov = (cov[:n, :n] + cov[n:, n:]) / 2.
-    np.fill_diagonal(cov, p / 2.)
+    # np.fill_diagonal(cov, p / 2.)
     w, v = LA.eig(cov)
     for i in range(w.shape[0]):
         w[i] = max(w[i], 1e-9)

@@ -6,12 +6,14 @@ import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
 import os
 
+np.random.seed(0)
+
 ORIGINAL_METHOD = 0
 SIGN_METHOD = 1
 JOINT_METHOD = 2
 methods = [ORIGINAL_METHOD, SIGN_METHOD, JOINT_METHOD]
 
-def generate_and_save_plot_data(N_list, K, Q_inv, run_id):
+def generate_and_save_plot_data(N_list, K, Q_inv, run_id, a1, a2, a3):
     global ORIGINAL_METHOD, SIGN_METHOD, JOINT_METHOD, methods
 
     Q = LA.inv(Q_inv)
@@ -20,13 +22,20 @@ def generate_and_save_plot_data(N_list, K, Q_inv, run_id):
     ps_list = np.zeros((len(N_list), len(methods)))
     for i in range(len(N_list)):
         N = N_list[i]
-        prob_of_succ = [0 for _ in range(len(methods))]
         for k in range(K):
             samples = np.random.multivariate_normal(np.zeros(p), Q, N)
             error = [0 for _ in range(len(methods))]
-            error[ORIGINAL_METHOD], _, _, _ = utils.original_data(samples, graph)
-            error[SIGN_METHOD],     _, _, _ = utils.sign_method(samples, graph)
-            error[JOINT_METHOD],    _, _, _ = utils.joint_method(samples, graph, np.eye(p), np.zeros((p, p)), 3,  .1)
+            l1 = a1 * np.sqrt(np.log(p) / N)
+            l2 = a2 * np.sqrt(np.log(p) / N)
+            l3 = a3 * np.sqrt(np.log(p) / N)
+            error[ORIGINAL_METHOD], _, _ = utils.original_data(samples, graph, l1)
+            error[SIGN_METHOD],     _, _ = utils.sign_method(samples, graph, l2)
+            error[JOINT_METHOD],    _, _ = utils.joint_method(samples, graph, np.eye(p), np.zeros((p, p)), 3,  .1, l3)
+
+            # error[ORIGINAL_METHOD], _, _, l1 = utils.original_data(samples, graph)
+            # error[SIGN_METHOD],     _, _, l2 = utils.sign_method(samples, graph)
+            # error[JOINT_METHOD],    _, _, l3 = utils.joint_method(samples, graph, np.eye(p), np.zeros((p, p)), 3,  .1)
+
             for method in methods:
                 if error[method] == 0:
                     ps_list[i, method] += (1 / K)
