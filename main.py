@@ -51,14 +51,17 @@ def run_pofe_degree(id, d, a1, a2, a3):
     plot_pofe.generate_and_save_plot_data(N_list, 100, Q_inv, 'degree-'+str(id), a1, a2, a3)
     # plot_pofe.plot('degree-'+str(id))
 
-# def run_pofe_H(id, H, a1, a2, a3):
-    # Q_inv = utils.get_star(128, 0.25)
-    # N_list
+def run_pofe_H(id, Hr, Hi, a):
+    Q_inv = utils.get_star(128, 0.25)
+    N_list = [100*i for i in range(1,150)]
+    plot_pofe.generate_and_save_plot_data_H(N_list, 100, Q_inv, 'H-'+str(id), a, Hr, Hi)
+    plot_pofe.plot_H('H-'+str(id))
+
 
 def run_1_snr():
     mat = loadmat('cov_generator/random_covs.mat')
     Q_inv = mat.get('Qinv_40_1')
-    snr_list = [.5*i for i in range(1, 51)]
+    snr_list = [.5*i for i in range(1, 100, 5)]
     plot_snr.generate_and_save_plot_data(snr_list, 100, 10*1000, Q_inv, '1')
     plot_snr.plot('1')
 
@@ -73,7 +76,39 @@ a1, a2, a3 = 3.1, 5, 0.75
 # run_pofe_dimension(1, 64, a1, a2, a3)
 # run_pofe_dimension(2, 128, a1, a2, a3)
 # run_pofe_dimension(3, 256, a1, a2, a3)
-run_pofe_degree(1, 40, a1, a2, a3)
-run_pofe_degree(2, 50, a1, a2, a3)
-run_pofe_degree(3, 60, a1, a2, a3)
+# run_pofe_degree(1, 40, a1, a2, a3)
+# run_pofe_degree(2, 50, a1, a2, a3)
+# run_pofe_degree(3, 60, a1, a2, a3)
+import numpy as np
+from numpy import linalg as LA
+
+p  = 128
+Hr = np.random.normal(0, 1, (p, p))
+Hi = np.random.normal(0, 1, (p, p))
+H = np.zeros((2*p, 2*p))
+
+H[:p, :p], H[p:, p:] = Hr, Hr
+H[:p, p:], H[p:, :p] = -Hi, Hi
+min_eig = np.min(np.absolute(LA.eigvals(H)))
+print('min_eig:', min_eig)
+a3 = 0.95
+run_pofe_H(1, Hr, Hi, a3)
+
+Hr *= 2
+Hi *= 2
+H[:p, :p], H[p:, p:] = Hr, Hr
+H[:p, p:], H[p:, :p] = -Hi, Hi
+min_eig = np.min(np.absolute(LA.eigvals(H)))
+print('min_eig:', min_eig)
+a3 = 0.85
+run_pofe_H(2, Hr, Hi, a3)
+
+Hr *= 2
+Hi *= 2
+H[:p, :p], H[p:, p:] = Hr, Hr
+H[:p, p:], H[p:, :p] = -Hi, Hi
+min_eig = np.min(np.absolute(LA.eigvals(H)))
+print('min_eig:', min_eig)
+a3 = 0.75
+run_pofe_H(3, Hr, Hi, a3)
 # run_1_snr()

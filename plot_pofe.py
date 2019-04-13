@@ -69,3 +69,53 @@ def plot(run_id):
     plt.xlabel('num of samples')
     plt.ylabel('prob of success')
     plt.show()
+
+
+def generate_and_save_plot_data_H(N_list, K, Q_inv, run_id, a, Hr, Hi):
+    global ORIGINAL_METHOD, SIGN_METHOD, JOINT_METHOD, methods
+
+    Q = LA.inv(Q_inv)
+    p = Q.shape[0]
+    graph = utils.sparsity_pattern(Q_inv)
+    ps_list = np.zeros(len(N_list))
+    for i in range(len(N_list)):
+        N = N_list[i]
+        for k in range(K):
+            samples = np.random.multivariate_normal(np.zeros(p), Q, N)
+            l = a * np.sqrt(np.log(p) / N)
+
+            error,    _, _ = utils.joint_method(samples, graph, Hr, Hi, 3,  .1, l)
+
+            # error,    _, _, l = utils.joint_method(samples, graph, Hr, Hi, 3,  .1)
+            # print(l / np.sqrt(np.log(p) / N))
+            # print(l)
+
+            if error == 0:
+                ps_list[i] += (1 / K)
+        print('#{0} done.'.format(N))
+
+    if not os.path.exists('./data/plot_pofe/run_{0}'.format(run_id)):
+        print('directory ./data/plot_pofe/run_{0} created.'.format(run_id))
+        os.makedirs('./data/plot_pofe/run_{0}'.format(run_id))
+    else:
+        for f in os.listdir('./data/plot_pofe/run_{0}'.format(run_id)):
+            print('{0} removed.'.format(f))
+            os.remove('./data/plot_pofe/run_{0}/{1}'.format(run_id, f))
+
+    np.savetxt('data/plot_pofe/run_{0}/N_list.txt'.format(run_id), N_list)
+    np.savetxt('data/plot_pofe/run_{0}/ps_list.txt'.format(run_id), ps_list)
+
+
+def plot_H(run_id):
+    global ORIGINAL_METHOD, SIGN_METHOD, JOINT_METHOD, methods
+
+    N_list  = np.loadtxt('data/plot_pofe/run_{0}/N_list.txt'.format(run_id))
+    ps_list = np.loadtxt('data/plot_pofe/run_{0}/ps_list.txt'.format(run_id))
+
+    joint_patch = mpatches.Patch(color='g', label='Joint')
+
+    plt.legend(handles=[joint_patch])
+    plt.plot(N_list, ps_list, 'go-')
+    plt.xlabel('num of samples')
+    plt.ylabel('prob of success')
+    plt.show()
