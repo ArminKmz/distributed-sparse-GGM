@@ -12,7 +12,6 @@ def generate_and_save_plot_data(snr_list, K, N, Q_inv, run_id):
     p = Q_inv.shape[0]
     edges = utils.edges(Q_inv)
     non_edges = (p * (p - 1) / 2) - edges
-    graph = utils.sparsity_pattern(Q_inv)
     samples = np.random.multivariate_normal(np.zeros(p), Q, N)
 
     Hi_list = np.random.normal(0, 1, (K, p, p))
@@ -34,7 +33,7 @@ def generate_and_save_plot_data(snr_list, K, N, Q_inv, run_id):
         for k in range(K):
             Hr = Hr_list[k, :, :]
             Hi = Hi_list[k, :, :]
-            error, fn, fp, _lambda = utils.joint_method(samples, graph, Hr, Hi, snr, .1)
+            error, fn, fp, _lambda = utils.joint_method(samples, Q_inv, Hr, Hi, snr, .1)
             fnr_avg    += fn / (edges + .0)
             fpr_avg    += fp / (non_edges + .0)
             lambda_avg += _lambda

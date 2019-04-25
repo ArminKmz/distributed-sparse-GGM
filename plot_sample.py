@@ -31,15 +31,14 @@ def generate_and_save_plot_data(N_list, K, mat, names, run_id):
             p = Q_inv.shape[0]
             edges = utils.edges(Q_inv)
             non_edges = (p * (p - 1) / 2) - edges
-            graph = utils.sparsity_pattern(Q_inv)
             for k in range(K):
                 samples = np.random.multivariate_normal(np.zeros(p), Q, N)
                 fn      = np.zeros(len(methods))
                 fp      = np.zeros(len(methods))
                 _lambda = np.zeros(len(methods))
-                error, fn[ORIGINAL_METHOD], fp[ORIGINAL_METHOD], _lambda[ORIGINAL_METHOD] = utils.original_data(samples, graph)
-                error, fn[SIGN_METHOD],     fp[SIGN_METHOD],     _lambda[SIGN_METHOD]     = utils.sign_method(samples, graph)
-                error, fn[JOINT_METHOD],    fp[JOINT_METHOD],    _lambda[JOINT_METHOD]    = utils.joint_method(samples, graph, np.eye(p), np.zeros((p, p)), 3,  .1)
+                error, fn[ORIGINAL_METHOD], fp[ORIGINAL_METHOD], _lambda[ORIGINAL_METHOD] = utils.original_data(samples, Q_inv)
+                error, fn[SIGN_METHOD],     fp[SIGN_METHOD],     _lambda[SIGN_METHOD]     = utils.sign_method(samples, Q_inv)
+                error, fn[JOINT_METHOD],    fp[JOINT_METHOD],    _lambda[JOINT_METHOD]    = utils.joint_method(samples, Q_inv, np.eye(p), np.zeros((p, p)), 3,  .1)
                 for method in methods:
                     fpr_avg[method]    += fp[method] / (non_edges + .0)
                     fnr_avg[method]    += fn[method] / (edges + .0)

@@ -18,7 +18,6 @@ def generate_and_save_plot_data(N_list, K, Q_inv, run_id, a1, a2, a3):
 
     Q = LA.inv(Q_inv)
     p = Q.shape[0]
-    graph = utils.sparsity_pattern(Q_inv)
     ps_list = np.zeros((len(N_list), len(methods)))
     for i in range(len(N_list)):
         N = N_list[i]
@@ -28,13 +27,16 @@ def generate_and_save_plot_data(N_list, K, Q_inv, run_id, a1, a2, a3):
             l1 = a1 * np.sqrt(np.log(p) / N)
             l2 = a2 * np.sqrt(np.log(p) / N)
             l3 = a3 * np.sqrt(np.log(p) / N)
-            error[ORIGINAL_METHOD], _, _ = utils.original_data(samples, graph, l1)
-            error[SIGN_METHOD],     _, _ = utils.sign_method(samples, graph, l2)
-            error[JOINT_METHOD],    _, _ = utils.joint_method(samples, graph, np.eye(p), np.zeros((p, p)), 3,  .1, l3)
+            error[ORIGINAL_METHOD], _, _ = utils.original_data(samples, Q_inv, l1, True)
+            error[SIGN_METHOD],     _, _ = utils.sign_method(samples, Q_inv, l2, True)
+            error[JOINT_METHOD],    _, _ = utils.joint_method(samples, Q_inv, np.eye(p), np.zeros((p, p)), 3,  .1, l3, True)
 
-            # error[ORIGINAL_METHOD], _, _, l1 = utils.original_data(samples, graph)
-            # error[SIGN_METHOD],     _, _, l2 = utils.sign_method(samples, graph)
-            # error[JOINT_METHOD],    _, _, l3 = utils.joint_method(samples, graph, np.eye(p), np.zeros((p, p)), 3,  .1)
+            # error[ORIGINAL_METHOD], _, _, l1 = utils.original_data(samples, Q_inv)
+            # print(l1 / np.sqrt(np.log(p) / N))
+            # error[SIGN_METHOD],     _, _, l2 = utils.sign_method(samples, Q_inv)
+            # print(l2 / np.sqrt(np.log(p) / N))
+            # error[JOINT_METHOD],    _, _, l3 = utils.joint_method(samples, Q_inv, np.eye(p), np.zeros((p, p)), 3,  .1)
+            # print(l3 / np.sqrt(np.log(p) / N))
 
             for method in methods:
                 if error[method] == 0:
@@ -84,7 +86,7 @@ def generate_and_save_plot_data_H(N_list, K, Q_inv, run_id, a, Hr, Hi):
             samples = np.random.multivariate_normal(np.zeros(p), Q, N)
             l = a * np.sqrt(np.log(p) / N)
 
-            error,    _, _ = utils.joint_method(samples, graph, Hr, Hi, 3,  .1, l)
+            error,    _, _ = utils.joint_method(samples, Q_inv, Hr, Hi, 3,  .1, l)
 
             # error,    _, _, l = utils.joint_method(samples, graph, Hr, Hi, 3,  .1)
             # print(l / np.sqrt(np.log(p) / N))

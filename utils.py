@@ -7,6 +7,32 @@ from rpy2.robjects import numpy2ri
 import rpy2.robjects as robjects
 glasso_lib = rpackages.importr('glasso')
 
+
+def get_grid(n, theta):
+    N = n * n
+    Q_inv = np.zeros((N, N))
+    rc = [0, 0, 1, -1]
+    cc = [1, -1, 0, 0]
+    def _in(_x, _y):
+        return (0 <= _x and 0 <= _y and _x < n and _y < n)
+    for i in range(N):
+        Q_inv[i, i] = 1
+        x = i // n
+        y = i % n
+        for k in range(4):
+            xx = x + rc[k]
+            yy = y + cc[k]
+            if _in(xx, yy):
+                j = xx * n + yy
+                Q_inv[i, j]  = theta
+    Q = LA.inv(Q_inv)
+    for i in range(Q_inv.shape[0]):
+        Q_inv[i, :] *= np.sqrt(Q[i, i])
+        Q_inv[:, i] *= np.sqrt(Q[i, i])
+    print('min_theta:', np.min(np.min(abs(Q_inv[Q_inv!=0]))))
+    return Q_inv
+
+print(get_grid(6, 0.1))
 def get_star(n, rho, delta=None, normalize=False):
     if delta == None:
         delta = n - 1
@@ -179,6 +205,21 @@ def diff(ground_graph, predicted_graph):
     tmp = ground_graph - predicted_graph
     return int(np.sum(tmp[tmp==1])//2), int(abs(np.sum(tmp[tmp==-1]))//2)
 
+def sign_diff(Q_inv, J):
+    '''
+        return false negative, false positive with considering signs
+    '''
+    fn, fp = 0, 0
+    for i in range(Q_inv.shape[0]):
+        for j in range(i+1, Q_inv.shape[0]):
+            if J[i, j] == 0 and Q_inv[i, j] != 0: fn += 1
+            elif J[i, j] != 0 and Q_inv[i, j] == 0: fp += 1
+            elif J[i, j] != 0 and Q_inv[i, j] != 0 and np.sign(J[i, j]) != np.sign(Q_inv[i, j]):
+                if np.sign(J[i, j]) == +1: fp += 1
+                else: fn += 1
+    return fn, fp
+
+
 def quantize(samples, R):
     '''
         return R-bit quantized of samples (according to codebook.mat)
@@ -242,33 +283,48 @@ def error(cov, ground_graph, _lambda, return_precision_matrix=False):
         return fn+fp, fn, fp, J
     return fn+fp, fn, fp
 
-def sign_error(cov, Q_inv, _lambda):
+def sign_error(cov, Q_inv, _lambda, return_precision_matrix=False):
     J = glasso(cov, _lambda)
+    fn, fp = sign_diff(Q_inv, J)
+    if return_precision_matrix:
+        return fn+fp, fn, fp, J
+    return fn+fp, fn, fp
 
-def original_data(samples, ground_graph, _lambda=None):
+def original_data(samples, Q_inv, _lambda=None, sign=False):
     N = samples.shape[0]
     # cov = 1. / N * (samples.T @ samples)
     cov = np.cov(samples.T)
+    ground_graph = sparsity_pattern(Q_inv)
+    if sign:
+        if _lambda == None:
+            raise Exception('_lambda must given in sign error.')
+        return sign_error(cov, Q_inv, _lambda)
     if _lambda == None:
         return best_error(cov, ground_graph)
     return error(cov, ground_graph, _lambda)
 
-def sign_method(samples, ground_graph, _lambda=None):
+def sign_method(samples, Q_inv, _lambda=None, sign=False):
+    ground_graph = sparsity_pattern(Q_inv)
     sign_samples = np.sign(samples)
     assert(sign_samples[sign_samples==0].shape[0] == 0)
     N = samples.shape[0]
     # cov = 1. / N * (sign_samples.T @ sign_samples)
-    cov = np.cov(samples.T)
+    cov = np.cov(sign_samples.T)
     cov = np.sin(np.pi * cov / 2.)
     w, v = LA.eig(cov)
     for i in range(w.shape[0]):
         w[i] = max(w[i], 1e-9)
     cov = v @ np.diag(w) @ LA.inv(v)
+    if sign:
+        if _lambda == None:
+            raise Exception('_lambda must given sign error.')
+        return sign_error(cov, Q_inv, _lambda)
     if _lambda == None:
         return best_error(cov, ground_graph)
     return error(cov, ground_graph, _lambda)
 
-def per_symbol_quantization_method(samples, ground_graph, r, _lambda=None):
+def per_symbol_quantization_method(samples, Q_inv, r, _lambda=None):
+    ground_graph = sparsity_pattern(Q_inv)
     quantized_samples = quantize(samples, r)
     N = samples.shape[0]
     cov = 1. / N * (quantized_samples.T @ quantized_samples)
@@ -276,7 +332,8 @@ def per_symbol_quantization_method(samples, ground_graph, r, _lambda=None):
         return best_error(cov, ground_graph)
     return error(cov, ground_graph, _lambda)
 
-def joint_method(samples, ground_graph, Hr, Hi, snr, sigma2, _lambda=None):
+def joint_method(samples, Q_inv, Hr, Hi, snr, sigma2, _lambda=None, sign=False):
+    ground_graph = sparsity_pattern(Q_inv)
     p = snr * sigma2
     samples = np.sqrt(p / 2.) * samples
     N, n = samples.shape
@@ -308,6 +365,10 @@ def joint_method(samples, ground_graph, Hr, Hi, snr, sigma2, _lambda=None):
     for i in range(w.shape[0]):
         w[i] = max(w[i], 1e-9)
     cov = v @ np.diag(w) @ LA.inv(v)
+    if sign:
+        if _lambda == None:
+            raise Exception('_lambda must given in sign error.')
+        return sign_error(cov, Q_inv, _lambda)
     if _lambda == None:
         return best_error(cov, ground_graph)
     return error(cov, ground_graph, _lambda)
