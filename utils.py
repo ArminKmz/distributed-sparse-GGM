@@ -5,6 +5,7 @@ from sklearn.covariance import graphical_lasso
 import rpy2.robjects.packages as rpackages
 from rpy2.robjects import numpy2ri
 import rpy2.robjects as robjects
+from scipy import stats
 glasso_lib = rpackages.importr('glasso')
 
 
@@ -32,7 +33,6 @@ def get_grid(n, theta):
     print('min_theta:', np.min(np.min(abs(Q_inv[Q_inv!=0]))))
     return Q_inv
 
-print(get_grid(6, 0.1))
 def get_star(n, rho, delta=None, normalize=False):
     if delta == None:
         delta = n - 1
@@ -365,6 +365,25 @@ def joint_method(samples, Q_inv, Hr, Hi, snr, sigma2, _lambda=None, sign=False):
     for i in range(w.shape[0]):
         w[i] = max(w[i], 1e-9)
     cov = v @ np.diag(w) @ LA.inv(v)
+    if sign:
+        if _lambda == None:
+            raise Exception('_lambda must given in sign error.')
+        return sign_error(cov, Q_inv, _lambda)
+    if _lambda == None:
+        return best_error(cov, ground_graph)
+    return error(cov, ground_graph, _lambda)
+
+def kendalltau_method(samples, Q_inv, _lambda=None, sign=False):
+    ground_graph = sparsity_pattern(Q_inv)
+    N, n = samples.shape
+    cov = np.zeros((n,n))
+    for i in range(n):
+        for j in range(i):
+            cov[i, j], _ = stats.kendalltau(samples[:, i], samples[:, j], method='asymptotic')
+    cov = cov + cov.T
+    for i in range(n):
+        cov[i, i] = 1
+    cov = np.sin(np.pi * cov / 2.)
     if sign:
         if _lambda == None:
             raise Exception('_lambda must given in sign error.')

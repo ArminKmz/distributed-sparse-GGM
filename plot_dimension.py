@@ -9,7 +9,8 @@ import os
 ORIGINAL_METHOD = 0
 SIGN_METHOD = 1
 JOINT_METHOD = 2
-methods = [ORIGINAL_METHOD, SIGN_METHOD, JOINT_METHOD]
+KT_METHOD = 3
+methods = [ORIGINAL_METHOD, SIGN_METHOD, JOINT_METHOD, KT_METHOD]
 
 def generate_and_save_plot_data(N, K, mat, run_id):
     '''
@@ -17,7 +18,7 @@ def generate_and_save_plot_data(N, K, mat, run_id):
         matrix with following format as key:
         'Q_inv_{p}_{id}'
     '''
-    global ORIGINAL_METHOD, SIGN_METHOD, JOINT_METHOD, methods
+    global ORIGINAL_METHOD, SIGN_METHOD, JOINT_METHOD, KT_METHOD, methods
 
     # reading cov names
     keys = list(mat.keys())
@@ -62,6 +63,7 @@ def generate_and_save_plot_data(N, K, mat, run_id):
             edges = utils.edges(Q_inv)
             e_avg += edges
             non_edges = (p * (p - 1) / 2) - edges
+            graph = utils.sparsity_pattern(Q_inv)
             d_avg += utils.get_max_degree(graph)
             for k in range(K):
                 samples = np.random.multivariate_normal(np.zeros(p), Q, N)
@@ -71,6 +73,7 @@ def generate_and_save_plot_data(N, K, mat, run_id):
                 error, fn[ORIGINAL_METHOD], fp[ORIGINAL_METHOD], _lambda[ORIGINAL_METHOD] = utils.original_data(samples, Q_inv)
                 error, fn[SIGN_METHOD],     fp[SIGN_METHOD],     _lambda[SIGN_METHOD]     = utils.sign_method(samples, Q_inv)
                 error, fn[JOINT_METHOD],    fp[JOINT_METHOD],    _lambda[JOINT_METHOD]    = utils.joint_method(samples, Q_inv, np.eye(p), np.zeros((p, p)), 3,  .1)
+                error, fn[KT_METHOD],       fp[KT_METHOD],       _lambda[KT_METHOD]       = utils.kendalltau_method(samples, Q_inv)
                 for method in methods:
                     fpr_avg[method]    += fp[method] / (non_edges + .0)
                     fnr_avg[method]    += fn[method] / (edges + .0)
@@ -102,7 +105,7 @@ def generate_and_save_plot_data(N, K, mat, run_id):
     print('data saved to ./data/plot_dimension/run_{0}.'.format(run_id))
 
 def plot(run_id):
-    global ORIGINAL_METHOD, SIGN_METHOD, JOINT_METHOD, methods
+    global ORIGINAL_METHOD, SIGN_METHOD, JOINT_METHOD, KT_METHOD, methods
 
     N           = np.loadtxt('data/plot_dimension/run_{0}/N.txt'.format(run_id))
     p_list      = np.loadtxt('data/plot_dimension/run_{0}/p_list.txt'.format(run_id))
@@ -115,6 +118,7 @@ def plot(run_id):
     red_patch   = mpatches.Patch(color='r', label='Original')
     blue_patch  = mpatches.Patch(color='b', label='Sign')
     joint_patch = mpatches.Patch(color='g', label='Joint')
+    kt_patch    = mpatches.Patch(color='y', label='KT')
 
     plt.plot(p_list, d_list, 'ko-')
     plt.xlabel('p')
@@ -125,6 +129,7 @@ def plot(run_id):
     plt.plot(p_list, fnr_list[:, ORIGINAL_METHOD], 'ro-')
     plt.plot(p_list, fnr_list[:, SIGN_METHOD], 'bo-')
     plt.plot(p_list, fnr_list[:, JOINT_METHOD], 'go-')
+    plt.plot(p_list, fnr_list[:, KT_METHOD], 'yo-')
     plt.xlabel('p')
     plt.ylabel('False negative rate')
     plt.legend(handles=[red_patch, blue_patch, joint_patch])
@@ -134,6 +139,7 @@ def plot(run_id):
     plt.plot(p_list, fpr_list[:, ORIGINAL_METHOD], 'ro-')
     plt.plot(p_list, fpr_list[:, SIGN_METHOD], 'bo-')
     plt.plot(p_list, fpr_list[:, JOINT_METHOD], 'go-')
+    plt.plot(p_list, fpr_list[:, KT_METHOD], 'yo-')
     plt.xlabel('p')
     plt.ylabel('False positive rate')
     plt.legend(handles=[red_patch, blue_patch, joint_patch])
@@ -143,7 +149,8 @@ def plot(run_id):
     plt.plot(p_list, lambda_list[:, ORIGINAL_METHOD], 'ro-')
     plt.plot(p_list, lambda_list[:, SIGN_METHOD], 'bo-')
     plt.plot(p_list, lambda_list[:, JOINT_METHOD], 'go-')
+    plt.plot(p_list, lambda_list[:, KT_METHOD], 'yo-')
     plt.xlabel('p')
     plt.ylabel('lambda')
-    plt.legend(handles=[red_patch, blue_patch, joint_patch])
+    plt.legend(handles=[red_patch, blue_patch, joint_patch, kt_patch])
     plt.show()

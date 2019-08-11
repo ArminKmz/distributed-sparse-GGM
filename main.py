@@ -78,15 +78,15 @@ def run_1_snr():
     plot_snr.plot('1')
 
 #---------------------------------
-# run_1_p()
-# run_2_p()
+run_1_p()
+run_2_p()
 # run_3_p()
 #---------------------------------
 # run_1_n()
-# run_2_n()
-# run_3_n()
+run_2_n()
+run_3_n()
 #---------------------------------
-a1, a2, a3 = 3.1, 4.5, 0.75
+# a1, a2, a3 = 3.1, 4.5, 0.75
 # run_pofe_dimension(1, 64, a1, a2, a3)
 # run_pofe_dimension(2, 128, a1, a2, a3)
 # run_pofe_dimension(3, 256, a1, a2, a3)
@@ -152,7 +152,7 @@ a1, a2, a3 = 3.1, 4.5, 0.75
 # run_pofe_dimension_chain(5, 128, a1, a2, a3)
 # run_pofe_dimension_chain(6, 256, a1, a2, a3)
 
-a1, a2, a3 = 3, 3.8, 0.6
-run_pofe_dimension_grid(4, 5, a1, a2, a3)
-run_pofe_dimension_grid(5, 6, a1, a2, a3)
-run_pofe_dimension_grid(6, 7, a1, a2, a3)
+# a1, a2, a3 = 3, 3.8, 0.6
+# run_pofe_dimension_grid(4, 5, a1, a2, a3)
+# run_pofe_dimension_grid(5, 6, a1, a2, a3)
+# run_pofe_dimension_grid(6, 7, a1, a2, a3)
