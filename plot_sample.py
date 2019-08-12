@@ -45,7 +45,7 @@ def generate_and_save_plot_data(N_list, K, mat, names, run_id):
                     fpr_avg[method]    += fp[method] / (non_edges + .0)
                     fnr_avg[method]    += fn[method] / (edges + .0)
                     lambda_avg[method] += _lambda[method]
-        denom = (len(name_list[i]) * K + .0)
+        denom = (len(names) * K + .0)
         for method in methods:
             fpr_list[i, method]    = fpr_avg[method]    / denom
             fnr_list[i, method]    = fnr_avg[method]    / denom
