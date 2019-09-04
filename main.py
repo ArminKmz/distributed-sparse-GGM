@@ -12,7 +12,6 @@ def run_2_p():
     plot_dimension.generate_and_save_plot_data(10*1000, 10, mat, '2')
     plot_dimension.plot('2')
 
-
 def run_3_p():
     mat = loadmat('cov_generator/random_covs.mat')
     plot_dimension.generate_and_save_plot_data(100*1000, 10, mat, '3')
@@ -67,8 +66,13 @@ def run_pofe_H(id, Hr, Hi, a):
     Q_inv = utils.get_star(128, 0.2)
     N_list = [100*i for i in range(1,100)]
     plot_pofe.generate_and_save_plot_data_H(N_list, 100, Q_inv, 'H-'+str(id), a, Hr, Hi)
-    # plot_pofe.plot_H('H-'+str(id))
+    plot_pofe.plot_H('H-'+str(id))
 
+def run_pofe_cmp(id, a1, a2, a3, a4):
+    Q_inv = utils.get_star(128, 0.2)
+    N_list = [100*i for i in range(1,100)]
+    plot_pofe.generate_and_save_plot_data_cmp(N_list, 100, Q_inv, 'cmp-'+str(id), a1, a2, a3, a4)
+    plot_pofe.plot_cmp('cmp-'+str(id))
 
 def run_1_snr():
     mat = loadmat('cov_generator/random_covs.mat')
@@ -83,11 +87,11 @@ def run_1_snr():
 # run_3_p()
 #---------------------------------
 # run_1_n()
-run_2_n()
-run_3_n()
+# run_2_n()
+# run_3_n()
 #---------------------------------
 # a1, a2, a3 = 3.1, 4.5, 0.75
-# run_pofe_dimension(1, 64, a1, a2, a3)
+# run_pofe_dimension(11, 64, a1, a2, a3)
 # run_pofe_dimension(2, 128, a1, a2, a3)
 # run_pofe_dimension(3, 256, a1, a2, a3)
 #---------------------------------
@@ -151,8 +155,11 @@ run_3_n()
 # run_pofe_dimension_chain(4, 64, a1, a2, a3)
 # run_pofe_dimension_chain(5, 128, a1, a2, a3)
 # run_pofe_dimension_chain(6, 256, a1, a2, a3)
-
+#---------------------------------
 # a1, a2, a3 = 3, 3.8, 0.6
 # run_pofe_dimension_grid(4, 5, a1, a2, a3)
 # run_pofe_dimension_grid(5, 6, a1, a2, a3)
 # run_pofe_dimension_grid(6, 7, a1, a2, a3)
+#---------------------------------
+a1, a2, a3, a4 = 3.1, 4.5, 0.75, 3.1
+run_pofe_cmp(1, a1, a2, a3, a4)

@@ -292,8 +292,8 @@ def sign_error(cov, Q_inv, _lambda, return_precision_matrix=False):
 
 def original_data(samples, Q_inv, _lambda=None, sign=False):
     N = samples.shape[0]
-    # cov = 1. / N * (samples.T @ samples)
-    cov = np.cov(samples.T)
+    cov = 1. / N * (samples.T @ samples)
+    # cov = np.cov(samples.T)
     ground_graph = sparsity_pattern(Q_inv)
     if sign:
         if _lambda == None:
@@ -308,8 +308,8 @@ def sign_method(samples, Q_inv, _lambda=None, sign=False):
     sign_samples = np.sign(samples)
     assert(sign_samples[sign_samples==0].shape[0] == 0)
     N = samples.shape[0]
-    # cov = 1. / N * (sign_samples.T @ sign_samples)
-    cov = np.cov(sign_samples.T)
+    cov = 1. / N * (sign_samples.T @ sign_samples)
+    # cov = np.cov(sign_samples.T)
     cov = np.sin(np.pi * cov / 2.)
     w, v = LA.eig(cov)
     for i in range(w.shape[0]):
@@ -356,8 +356,8 @@ def joint_method(samples, Q_inv, Hr, Hi, snr, sigma2, _lambda=None, sign=False):
         y[n:] = y2
         y_samples.append(y)
     y_samples = np.array(y_samples)
-    # S_y = 2. / N * (y_samples.T @ y_samples)
-    S_y = np.cov(y_samples.T)
+    S_y = 2. / N * (y_samples.T @ y_samples)
+    # S_y = np.cov(y_samples.T)
     cov = H_inv @ (S_y - sigma2 * np.eye(2*n)) @ H_inv.T
     cov = (cov[:n, :n] + cov[n:, n:]) / 2.
     # np.fill_diagonal(cov, p / 2.)
@@ -391,3 +391,34 @@ def kendalltau_method(samples, Q_inv, _lambda=None, sign=False):
     if _lambda == None:
         return best_error(cov, ground_graph)
     return error(cov, ground_graph, _lambda)
+
+def sign_tree_error(samples, Q_inv):
+    class union_find:
+        def __init__(self, d):
+            self.d = d
+            self.p = [i for i in range(d)]
+        def find(self, i):
+            return i if self.p[i] == i else self.find(self.p[i])
+        def union(self, i, j):
+            x, y = self.find(i), self.find(j)
+            self.p[x] = y
+    ground_graph = sparsity_pattern(Q_inv)
+    sign_samples = np.sign(samples)
+    N, d = sign_samples.shape
+    theta = np.zeros((d, d))
+    for i in range(d):
+        for j in range(i+1, d):
+            for n in range(N):
+                theta[i, j] += (1. / N) * (1 if sign_samples[n, i]*sign_samples[n, j] == 1 else 0)
+    edges = [[np.abs(theta[i, j] - 0.5), i, j] for i in range(d) for j in range(i+1, d)]
+    edges.sort(key=lambda x: x[0], reverse=True)
+    ds = union_find(d)
+    predicted_graph = np.zeros((d, d))
+    for edge in edges:
+        i, j = edge[1], edge[2]
+        if ds.find(i) != ds.find(j):
+            ds.union(i, j)
+            predicted_graph[i, j] = 1
+            predicted_graph[j, i] = 1
+    fn, fp = diff(ground_graph, predicted_graph)
+    return fn+fp, fn, fp
