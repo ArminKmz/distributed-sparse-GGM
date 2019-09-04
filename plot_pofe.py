@@ -102,7 +102,6 @@ def generate_and_save_plot_data_cmp(N_list, K, Q_inv, run_id, a1, a2, a3, a4):
                     ps_list[i, method] += (1 / K)
                 if abs(ps_list[i, method] - 1) <= 0.01:
                     flags[method] = 1
-                    print(2)
         print('#{0} done.'.format(N))
 
     if not os.path.exists('./data/plot_pofe/run_{0}'.format(run_id)):
