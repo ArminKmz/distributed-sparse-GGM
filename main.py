@@ -1,5 +1,5 @@
 from scipy.io import loadmat
-import plot_dimension, plot_sample, plot_pofe, plot_snr
+import plot_dimension, plot_sample, plot_pofe, plot_snr, plot_bit
 import utils
 
 def run_1_p():
@@ -37,6 +37,13 @@ def run_3_n():
     l = [5000*i for i in range(1, 21)]
     plot_sample.generate_and_save_plot_data(l, 10, mat, names, '3')
     plot_sample.plot('3')
+
+def runt_1_b():
+    mat = loadmat('cov_generator/random_covs.mat')
+    names = ['Qinv_50_{0}'.format(j) for j in range(1, 21)]
+    l = [5000*i for i in range(1, 21)]
+    plot_bit.generate_and_save_plot_data(l, 10, mat, names, '1')
+    plot_bit.plot('1')
 
 def run_pofe_dimension(id, p, a1, a2, a3):
     Q_inv = utils.get_star(p, 0.25, 50)
@@ -161,5 +168,7 @@ def run_1_snr():
 # run_pofe_dimension_grid(5, 6, a1, a2, a3)
 # run_pofe_dimension_grid(6, 7, a1, a2, a3)
 #---------------------------------
-a1, a2, a3, a4 = 3.1, 4.5, 0.75, 3.1
-run_pofe_cmp(1, a1, a2, a3, a4)
+# a1, a2, a3, a4 = 3.1, 4.5, 0.75, 3.1
+# run_pofe_cmp(1, a1, a2, a3, a4)
+#---------------
+runt_1_b()
