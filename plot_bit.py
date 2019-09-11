@@ -40,11 +40,8 @@ def generate_and_save_plot_data(B_list, K, mat, names, run_id):
                 fp      = np.zeros(len(methods))
                 _lambda = np.zeros(len(methods))
                 error, fn[SIGN_METHOD],     fp[SIGN_METHOD],     _lambda[SIGN_METHOD]     = utils.sign_method(samples1, Q_inv)
-                print('sign')
                 error, fn[JOINT_METHOD],    fp[JOINT_METHOD],    _lambda[JOINT_METHOD]    = utils.joint_method(samples1, Q_inv, np.eye(p), np.zeros((p, p)), 3,  .1)
-                print('joint')
                 error, fn[KT_METHOD],       fp[KT_METHOD],       _lambda[KT_METHOD]       = utils.kendalltau_method(samples2, Q_inv)
-                print('kendal')
                 for method in methods:
                     fpr_avg[method]    += fp[method] / (non_edges + .0)
                     fnr_avg[method]    += fn[method] / (edges + .0)
